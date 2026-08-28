@@ -1,6 +1,9 @@
 package roster
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+)
 
 type ShiftOverlap struct {
 	Date         string  `json:"date"`
@@ -59,8 +62,13 @@ func FindShiftsInCommon(emp1, emp2 *Employee) (result []ShiftOverlap, message st
 	return res, "", nil
 }
 
-func FindMostSeen(emp *Employee, emps []*Employee) (map[string][]ShiftOverlap, error) {
-	var res = make(map[string][]ShiftOverlap)
+type EmployeeOverlapResponse struct {
+	Employee *Employee
+	Overlaps []ShiftOverlap
+}
+
+func FindMostSeen(emp *Employee, emps []*Employee) ([]EmployeeOverlapResponse, error) {
+	var res []EmployeeOverlapResponse
 	for _, otherEmp := range emps {
 		if otherEmp.Name == emp.Name {
 			continue
@@ -72,12 +80,15 @@ func FindMostSeen(emp *Employee, emps []*Employee) (map[string][]ShiftOverlap, e
 		}
 
 		if len(msg) > 0 {
-			fmt.Println(msg)
 			return nil, nil
 		}
 
-		res[otherEmp.Name] = commonShifts
+		res = append(res, EmployeeOverlapResponse{Employee: otherEmp, Overlaps: commonShifts})
 	}
+
+	sort.Slice(res, func(a, b int) bool {
+		return len(res[a].Overlaps) > len(res[b].Overlaps)
+	})
 
 	return res, nil
 }
