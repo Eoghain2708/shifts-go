@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"shifts-go/cli/ui"
 	"shifts-go/internal/dates"
 	"shifts-go/internal/roster"
 
@@ -15,12 +16,8 @@ import (
 var whoCmd = &cobra.Command{
 	Use:   "who <date-string> in format YYYY-MM-DD or else a shorthand command",
 	Short: "See who is in work on a given day",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Long: `Receive a list of each person working on a given day, ordered by shift start time, and showing
+	 Name, Shift, Total hours worked, and Total payment for the day.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		date, err := dates.DefinePeriod(args[0])
 		if err != nil {
@@ -32,7 +29,7 @@ to quickly create a Cobra application.`,
 		}
 
 		namesAndShifts := roster.ShiftsByDate(date, r.Employees)
-
+		fmt.Printf("%s: %v\n", ui.BoldWhite.Render("Shifts for"), ui.BoldLightCyan.Render(date.Format("Monday 2 January 2006")))
 		for _, shiftData := range namesAndShifts {
 			shiftData.Print()
 		}
