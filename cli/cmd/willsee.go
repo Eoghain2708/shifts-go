@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"shifts-go/cli/ui"
 	"shifts-go/internal/dates"
 	"shifts-go/internal/roster"
 
@@ -13,9 +14,10 @@ import (
 
 // willseeCmd represents the willsee command
 var willseeCmd = &cobra.Command{
-	Use:   "willsee <NAME_ONE> <NAME_TWO> <DATE>",
-	Short: "Enter the names of two employees and receive an output of any overlapping shifts they will have throughout the week",
-	Long:  ``,
+	Use:     "willsee <NAME_ONE> <NAME_TWO> <DATE>",
+	Aliases: []string{"wsee", "ws"},
+	Short:   "Enter the names of two employees and receive an output of any overlapping shifts they will have throughout the week",
+	Long:    ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		date, err := dates.DefinePeriod(args[2])
 		if err != nil {
@@ -44,8 +46,13 @@ var willseeCmd = &cobra.Command{
 
 		if len([]rune(message)) > 0 {
 			fmt.Println(message)
+			return nil
 		}
-
+		fmt.Println()
+		fmt.Printf("%s and %s will see each other on the following shift(s)\n",
+			ui.BoldLightYellow.Render(emp1.Name),
+			ui.BoldLightCyan.Render(emp2.Name))
+		fmt.Println()
 		for _, overlap := range commonShifts {
 			overlap.Print()
 		}

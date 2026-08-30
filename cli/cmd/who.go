@@ -14,8 +14,9 @@ import (
 
 // whoCmd represents the who command
 var whoCmd = &cobra.Command{
-	Use:   "who <date-string> in format YYYY-MM-DD or else a shorthand command",
-	Short: "See who is in work on a given day",
+	Use:     "who <date-string> in format YYYY-MM-DD or else a shorthand command",
+	Aliases: []string{"wh"},
+	Short:   "See who is in work on a given day",
 	Long: `Receive a list of each person working on a given day, ordered by shift start time, and showing
 	 Name, Shift, Total hours worked, and Total payment for the day.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
