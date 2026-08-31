@@ -48,6 +48,7 @@ var willseeCmd = &cobra.Command{
 			fmt.Println(message)
 			return nil
 		}
+
 		fmt.Println()
 		fmt.Printf("%s and %s will see each other on the following shift(s)\n",
 			ui.BoldLightYellow.Render(emp1.Name),
