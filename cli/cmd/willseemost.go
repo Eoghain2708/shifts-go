@@ -13,8 +13,9 @@ import (
 
 // willseemostCmd represents the willseemost command
 var willseemostCmd = &cobra.Command{
-	Use:   "willseemost <EMPLOYEE_NAME> <DATE>",
-	Short: "See who a given employee will see most of in a given week",
+	Use:     "willseemost <EMPLOYEE_NAME> <DATE>",
+	Aliases: []string{"wsm"},
+	Short:   "See who a given employee will see most of in a given week",
 	Long: `Receive a list in tabular form ordered by which how many hours the given employee will spend with each of their colleagues
 	throughout the week, alongside the dates and frequencies.`,
 	RunE: func(cmd *cobra.Command, args []string) error {

@@ -34,6 +34,7 @@ var generatelifetimeCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("%v", err)
 		}
+
 		var names []string
 		for _, emp := range rota.Employees {
 			names = append(names, helper.NormaliseName(emp.Name))
@@ -45,7 +46,7 @@ var generatelifetimeCmd = &cobra.Command{
 			return fmt.Errorf("%v", err)
 		}
 
-		report, err := roster.GenerateReport(empName, date, client, rota.Employees)
+		report, err := roster.GenerateReportConcurrent(empName, date, client, rota.Employees)
 		if err != nil {
 			return errors.New("Error creating report")
 		}
