@@ -117,7 +117,7 @@ func PrintReportTable(r *Report) {
 	t.Render()
 }
 
-func GenerateReportConcurrent(empName string, from time.Time, c *Client, emps []Employee) (*Report, error) {
+func GenerateReport(empName string, from time.Time, c *Client, emps []Employee) (*Report, error) {
 	emp, err := FindEmployee(emps, empName)
 	if err != nil {
 		return nil, fmt.Errorf("employee could not be found in this week. Please select a week where they were in")

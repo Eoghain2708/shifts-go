@@ -46,7 +46,7 @@ var generatelifetimeCmd = &cobra.Command{
 			return fmt.Errorf("%v", err)
 		}
 
-		report, err := roster.GenerateReportConcurrent(empName, date, client, rota.Employees)
+		report, err := roster.GenerateReport(empName, date, client, rota.Employees)
 		if err != nil {
 			return errors.New("Error creating report")
 		}
