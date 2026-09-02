@@ -1,7 +1,6 @@
 package roster
 
 import (
-	"fmt"
 	"shifts-go/internal/helper"
 	"sort"
 	"time"
@@ -9,7 +8,7 @@ import (
 
 func ShiftsByDate(t time.Time, emps []Employee) []EmployeeShifts {
 	time := helper.FormatTime(t)
-	fmt.Println(time)
+
 	var res []EmployeeShifts
 
 	for i := range emps {

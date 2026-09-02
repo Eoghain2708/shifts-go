@@ -1,8 +1,16 @@
 package roster
 
 import (
+	"errors"
 	"fmt"
+	"os"
+	"shifts-go/cli/ui"
+	"shifts-go/internal/helper"
 	"sort"
+	"strconv"
+	"strings"
+
+	"github.com/aquasecurity/table"
 )
 
 type ShiftOverlap struct {
@@ -16,15 +24,15 @@ type ShiftOverlap struct {
 
 func FindShiftsInCommon(emp1, emp2 *Employee) (result []ShiftOverlap, message string, err error) {
 	if len(emp1.Shifts) == 0 && len(emp2.Shifts) == 0 {
-		return nil, "This rota has not been finished", nil
+		return []ShiftOverlap{}, "This rota has not been finished", nil
 	}
 
 	if len(emp1.Shifts) == 0 {
-		return nil, fmt.Sprintf("%s has no shifts scheduled yet", emp1.Name), nil
+		return []ShiftOverlap{}, fmt.Sprintf("%s has no shifts scheduled yet", emp1.Name), nil
 	}
 
 	if len(emp2.Shifts) == 0 {
-		return nil, fmt.Sprintf("%s has no shifts scheduled yet", emp2.Name), nil
+		return []ShiftOverlap{}, fmt.Sprintf("%s has no shifts scheduled yet", emp2.Name), nil
 	}
 
 	var res []ShiftOverlap
@@ -58,39 +66,92 @@ func FindShiftsInCommon(emp1, emp2 *Employee) (result []ShiftOverlap, message st
 	if len(res) == 0 {
 		return nil, "These employees will not see each other this week", nil
 	}
-
 	return res, "", nil
 }
 
-type EmployeeOverlapResponse struct {
-	Employee *Employee
-	Overlaps []ShiftOverlap
+func (so *ShiftOverlap) Print() {
+	fmt.Printf("%s\n", ui.BoldLightCyan.Render(helper.FormatShiftDate(so.Date)))
+	helper.Divide()
+	fmt.Printf("%s: %s\n", ui.BoldLightGreen.Render(so.ShiftOneName), ui.BoldWhite.Render(so.ShiftOne))
+	fmt.Printf("%s: %s\n", ui.BoldLightGreen.Render(so.ShiftTwoName), ui.BoldWhite.Render(so.ShiftTwo))
+	overlap := fmt.Sprintf("%.2f hours", so.Overlap)
+	fmt.Printf("%s: %s\n", ui.BoldLightGreen.Render("Overlap"), ui.BoldWhite.Render(overlap))
+	helper.Divide()
 }
 
-func FindMostSeen(emp *Employee, emps []*Employee) ([]EmployeeOverlapResponse, error) {
-	var res []EmployeeOverlapResponse
-	for _, otherEmp := range emps {
-		if otherEmp.Name == emp.Name {
+type EmployeeOverlapResponse struct {
+	Employee *Employee      `json:"employee"`
+	Overlaps []ShiftOverlap `json:"overlaps"`
+}
+
+func FindMostSeen(emp *Employee, emps []Employee) ([]EmployeeOverlapResponse, error) {
+	var res = []EmployeeOverlapResponse{}
+	for i := range emps {
+		otherEmp := &emps[i]
+		if otherEmp.ID == emp.ID {
 			continue
 		}
 
-		commonShifts, msg, err := FindShiftsInCommon(emp, otherEmp)
+		commonShifts, _, err := FindShiftsInCommon(emp, otherEmp)
+
 		if err != nil {
-			return nil, err
+			return nil, errors.New("Cannot find shifts in common")
 		}
 
-		if len(msg) > 0 {
-			return nil, nil
-		}
-
-		res = append(res, EmployeeOverlapResponse{Employee: otherEmp, Overlaps: commonShifts})
+		eos := EmployeeOverlapResponse{Employee: otherEmp, Overlaps: commonShifts}
+		res = append(res, eos)
 	}
 
 	sort.Slice(res, func(a, b int) bool {
-		return len(res[a].Overlaps) > len(res[b].Overlaps)
-	})
+		var hoursA, hoursB float64
+		for _, overlap := range res[a].Overlaps {
+			hoursA += overlap.Overlap
+		}
 
+		for _, overlap := range res[b].Overlaps {
+			hoursB += overlap.Overlap
+		}
+
+		return hoursA > hoursB
+	})
 	return res, nil
+}
+
+func PrintMostSeenTable(eos []EmployeeOverlapResponse) {
+	t := table.New(os.Stdout)
+	t.SetHeaders("Employee", "Frequency", "Total hrs seen", "Dates")
+
+	for _, response := range eos {
+		var datesBuilder strings.Builder
+		var hours float64
+
+		for _, overlap := range response.Overlaps {
+			hours += overlap.Overlap
+			fmt.Fprintf(&datesBuilder, "%s\n", helper.FormatShiftDate(overlap.Date))
+		}
+
+		row := []string{
+			ui.BoldLightCyan.Render(response.Employee.Name),
+			renderShiftFrequencyColour(len(response.Overlaps)),
+			strconv.FormatFloat(hours, 'f', 2, 64),
+			datesBuilder.String(),
+		}
+
+		t.AddRow(row...)
+	}
+
+	t.Render()
+}
+
+// Render number in different colour depending on frequency. >= 3 green, 1-2 yellow, 0 red
+func renderShiftFrequencyColour(sf int) string {
+	if sf >= 3 {
+		return ui.BoldLightGreen.Render(strconv.Itoa(sf))
+	} else if sf == 1 || sf == 2 {
+		return ui.BoldLightYellow.Render(strconv.Itoa(sf))
+	} else {
+		return ui.Red.Render(strconv.Itoa(sf))
+	}
 }
 
 func findOverlap(shift1, shift2 *Shift) (found bool, overlap float64) {

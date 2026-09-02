@@ -2,6 +2,9 @@ package roster
 
 import (
 	"fmt"
+	"shifts-go/cli/ui"
+	"shifts-go/internal/helper"
+	"time"
 )
 
 type Shift struct {
@@ -54,4 +57,21 @@ func (s *Shift) calculateHourlyWage(emp *Employee) int32 {
 	}
 
 	return wage
+}
+
+func (s *Shift) Print(e *Employee) {
+	t, err := time.Parse("2006-01-02", s.ShiftDate)
+	formatted := t.Format("Monday 2 January, 2006")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	helper.Divide()
+	fmt.Printf("%s: %-10s\n", ui.BoldLightGreen.Render("Day"), ui.BoldWhite.Render(formatted))
+	fmt.Printf("%s: %-10s\n", ui.BoldLightGreen.Render("Shift"), ui.BoldWhite.Render(s.ShiftText.Time12hr))
+	duration := fmt.Sprintf("%.2f hrs", s.Duration.DecimalDuration)
+	fmt.Printf("%s: %-10s\n", ui.BoldLightGreen.Render("Duration"), ui.BoldWhite.Render(duration))
+	payment := fmt.Sprintf("%.2f", float64(s.Payment(e))/100)
+	fmt.Printf("%s: %-10v\n", ui.BoldLightGreen.Render("Pay"), ui.BoldWhite.Render("£"+payment))
+	helper.Divide()
 }

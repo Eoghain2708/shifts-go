@@ -6,9 +6,9 @@ import (
 )
 
 func ThisWeek() time.Time {
-	today := time.Now().Truncate(24 * time.Hour)
+	today := Today()
 	offset := (int(today.Weekday()) - int(time.Friday) + 7) % 7
-	return today.AddDate(0, 0, offset)
+	return today.AddDate(0, 0, -offset)
 }
 func NextWeek() time.Time { return ThisWeek().AddDate(0, 0, 7) }
 func LastWeek() time.Time { return ThisWeek().AddDate(0, 0, -7) }

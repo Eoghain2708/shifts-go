@@ -1,17 +1,18 @@
 module shifts-go
 
-go 1.25.0
+go 1.27.0
 
 require (
-	github.com/MarkusZoppelt/fuzzymatch v0.1.0
+	github.com/charmbracelet/lipgloss v1.1.0
+	github.com/hbollon/go-edlib v1.7.0
 	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.10.2
 )
 
 require (
+	github.com/aquasecurity/table v1.11.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/colorprofile v0.2.3-0.20250311203215-f60798e515dc // indirect
-	github.com/charmbracelet/lipgloss v1.1.0 // indirect
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.13-0.20250311204145-2c3ea96c31dd // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
@@ -24,4 +25,5 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 )

@@ -2,13 +2,14 @@ package roster
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"shifts-go/internal/helper"
+	"sync"
 	"time"
 )
 
@@ -17,6 +18,8 @@ type Client struct {
 	ROSTER_URL string
 	EMAIL      string
 	PASSWORD   string
+	tokenMu    sync.Mutex
+	token      string
 }
 
 type LoginRequest struct {
@@ -85,11 +88,11 @@ func (client *Client) GetEmployees(time time.Time) (*EmployeeResponse, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, err
+		return nil, fmt.Errorf("ERROR: %v - v", resp.StatusCode, resp.Status)
 	}
 
 	var response EmployeeResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	if err := json.UnmarshalRead(resp.Body, &response); err != nil {
 		return nil, err
 	}
 
@@ -97,6 +100,13 @@ func (client *Client) GetEmployees(time time.Time) (*EmployeeResponse, error) {
 }
 
 func (client *Client) LoginAndGetToken() (string, error) {
+	client.tokenMu.Lock()
+	defer client.tokenMu.Unlock()
+
+	if client.token != "" {
+		return client.token, nil
+	}
+
 	cachedToken, found, err := GetCachedToken()
 	if err != nil {
 		return "", err
@@ -162,6 +172,8 @@ func (client *Client) LoginAndGetToken() (string, error) {
 	if err := Write("token.json", cache); err != nil {
 		return "", err
 	}
+
+	client.token = response.LoginToken
 
 	return response.LoginToken, nil
 }

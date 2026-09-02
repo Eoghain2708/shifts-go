@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"shifts-go/cli/ui"
+	"shifts-go/internal/helper"
 	"strings"
 
-	"github.com/MarkusZoppelt/fuzzymatch"
+	"github.com/hbollon/go-edlib"
 )
 
 const GenManagerCode = "1489343527823711206"
@@ -24,6 +25,7 @@ type Printable interface {
 type Employee struct {
 	JobCode   string             `json:"defaultJob"`
 	Name      string             `json:"displayName"`
+	ID        string             `json:"id"`
 	Age       float32            `json:"age"`
 	Shifts    map[string][]Shift `json:"shifts"`
 	StartDate string             `json:"startDate"`
@@ -75,25 +77,36 @@ type EmployeeResponse struct {
 }
 
 func FuzzyFindEmployee(emps []Employee, empName string) (*Employee, error) {
-	possibleMatches := []string{}
-	for _, emp := range emps {
-		possibleMatches = append(possibleMatches, emp.Name)
-	}
+	empName = helper.NormaliseName(empName)
 
-	match := fuzzymatch.SuggestClosestMatch(empName, possibleMatches, 40)
+	possibleMatches := []string{}
 
 	for i := range emps {
-		if emps[i].Name == match {
+		name := helper.NormaliseName(emps[i].Name)
+		if name == empName {
+			return &emps[i], nil
+		}
+
+		possibleMatches = append(possibleMatches, name)
+	}
+
+	res, err := edlib.FuzzySearchThreshold(empName, possibleMatches, 0.18, edlib.JaroWinkler)
+	if err != nil {
+		return nil, fmt.Errorf("Cannot find employee %s", empName)
+	}
+
+	for i := range emps {
+		if res == helper.NormaliseName(emps[i].Name) {
 			return &emps[i], nil
 		}
 	}
 
-	return nil, errors.New("employee not found")
+	return nil, fmt.Errorf("employee matching %s not found", empName)
 }
 
 func FindEmployee(emps []Employee, empName string) (*Employee, error) {
 	for _, emp := range emps {
-		if strings.TrimSpace(strings.ToLower(emp.Name)) == strings.ToLower(strings.TrimSpace(empName)) {
+		if helper.NormaliseName(emp.Name) == helper.NormaliseName(empName) {
 			return &emp, nil
 		}
 	}
@@ -101,26 +114,28 @@ func FindEmployee(emps []Employee, empName string) (*Employee, error) {
 	return nil, errors.New("employee not found")
 }
 
-func FindShifts(emps []Employee, empName string) (map[string][]Shift, error) {
-	emp, err := FuzzyFindEmployee(emps, empName)
-	if err != nil {
-		return nil, err
-	}
-
-	return emp.Shifts, nil
+func FindShifts(emps []Employee, e *Employee) (map[string][]Shift, error) {
+	return e.Shifts, nil
 }
 
 type EmployeeShifts struct {
-	Employee *Employee
-	Shifts   []Shift
+	Employee *Employee `json:"employee"`
+	Shifts   []Shift   `json:"shifts"`
 }
 
 func (es *EmployeeShifts) Print() {
-	fmt.Printf("%s: %v\n", ui.BoldGreen.Render("Name"), ui.BoldLightCyan.Render(es.Employee.Name))
+	fmt.Printf("%-6s %v\n", ui.BoldGreen.Render("Name:"), ui.BoldLightCyan.Render(es.Employee.Name))
+
 	for _, s := range es.Shifts {
-		fmt.Printf("%s: %v\n", ui.BoldGreen.Render("Shift"), s.ShiftText.Time12hr)
-		fmt.Printf("%s: %v\n", ui.BoldGreen.Render("Hours"), s.Duration.DecimalDuration)
-		fmt.Printf("%s: %v\n", ui.BoldGreen.Render("Pay"), (float64(s.Payment(es.Employee)) / 100))
+
+		fmt.Printf("%-6s %v\n", ui.BoldGreen.Render("Shift:"), ui.BoldWhite.Render(s.ShiftText.Time12hr))
+
+		decimalDuration := fmt.Sprintf("%.2f", s.Duration.DecimalDuration)
+		fmt.Printf("%-6s %v\n", ui.BoldGreen.Render("Hours:"), ui.BoldWhite.Render(decimalDuration))
+
+		pay := fmt.Sprintf("%.2f", float64(s.Payment(es.Employee))/100)
+		fmt.Printf("%-6s %s%s\n", ui.BoldGreen.Render("Pay:"), ui.BoldWhite.Render("£"), ui.BoldWhite.Render(pay))
+
 		fmt.Println(ui.BoldWhite.Render(strings.Repeat("-", 40)))
 	}
 }
